@@ -15,13 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -34,7 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 
@@ -46,7 +44,7 @@ data class ShoppingItem(
 ){}
 
 
-
+@Preview
 @Composable
 fun ShoppingItem(){
     var sItems by remember { mutableStateOf(listOf<ShoppingItem>()) }
@@ -82,18 +80,35 @@ fun ShoppingItem(){
                 .padding(5.dp)
         ){
             items(sItems){
-                ShoppingListItem(
-                    item = it,
-                    onDeleteClick = {
+                value ->
+                if (value.isEditing){
+                    ShoppingItemEditor(item = value, onEditComplete = {
+                        editedName, editedQuant -> sItems = sItems.map { it.copy(isEditing = false) }
+                        var shop =  sItems.find { it.id == value.id }
+                            shop.let {
+                             it?.name = editedName
+                             it?.quantity = editedQuant
+                         }
+                    })
+                } else {
+                    ShoppingListItem(
+                        item = value,
+                        onDeleteClick = {
+                                        sItems = sItems-value
+                        },
+                        onEditClick = {
+                            sItems = sItems.map{it.copy(isEditing = it.id==value.id)}
+                        }
+                    )
+                }
 
-                    },
-                    onEditClick = {}
-                )
             }
         }
     }
     
     if (showDialog){
+        itemName = ""
+        itemQunat = ""
         AlertDialog(
             onDismissRequest = { showDialog=false},
             confirmButton = {
@@ -130,7 +145,10 @@ fun ShoppingItem(){
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
+                            .padding(8.dp),
+                        placeholder = {
+                            Text(text = "Nome")
+                        }
                     )
 
                     OutlinedTextField(
@@ -139,7 +157,10 @@ fun ShoppingItem(){
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
+                            .padding(8.dp),
+                        placeholder = {
+                            Text(text = "Quantidade")
+                        }
                     )
                 }
             }
@@ -167,7 +188,7 @@ fun ShoppingListItem(
         Text(text = "Qty: ${item.quantity}", modifier = Modifier.padding(8.dp))
         Row (
             modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween
         ){
             IconButton(onClick = onEditClick) {
                 Icon(imageVector = Icons.Default.Edit, contentDescription = null)
@@ -198,34 +219,39 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int)-> Unit)
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
+            .border(width = 5.dp, color = Color.Blue)
             .padding(8.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceBetween
     ){
-        Column(
+        Column {
+                Row {
+                    Text(text = "Name   :")
+                    BasicTextField(
+                        value = editedName,
+                        onValueChange = {editedName=it},
+                        singleLine = true,
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(8.dp)
+                    )
+                }
 
-        ) {
-            BasicTextField(
-                value = editedName,
-                onValueChange = {editedName=it},
-                singleLine = true,
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp)
-            ) {
 
-            }
+                Row {
+                    Text(text = "Quantidade:   ")
+                    BasicTextField(
+                        value = editedQtd,
+                        onValueChange = {editedQtd=it},
+                        singleLine = true,
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(8.dp)
+                    )
+                }
 
-            BasicTextField(
-                value = editedQtd,
-                onValueChange = {editedQtd=it},
-                singleLine = true,
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp)
-            ) {
 
-            }
         }
+
 
         Button(
             onClick = {
